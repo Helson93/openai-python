@@ -1,0 +1,140 @@
+// inventory_app_render
+
+// Це базовий React + Express застосунок для обліку майна зв'язку, готовий до деплою на Render.
+
+// ==== СТРУКТУРА ====
+// client/ (React frontend)
+// server/ (Express backend)
+// package.json (root, запускає одночасно клієнт і сервер)
+
+// ==== ПІДГОТОВКА ====
+// 1. git clone <цей репозиторій>
+// 2. npm install
+// 3. npm run dev (локальний запуск)
+// 4. На Render вказати start команду: npm run start
+
+// ==== КОД ====
+
+// package.json (root)
+{
+  "name": "inventory-app",
+  "version": "1.0.0",
+  "scripts": {
+    "install": "cd client && npm install && cd ../server && npm install",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && nodemon index.js",
+    "client": "cd client && npm start",
+    "start": "cd server && node index.js"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
+
+// ==== server/index.js ====
+const express = require('express');
+const cors = require('cors');
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+app.use(cors());
+app.use(express.json());
+
+let inventory = [];
+
+app.get('/api/inventory', (req, res) => {
+  res.json(inventory);
+});
+
+app.post('/api/inventory', (req, res) => {
+  const item = req.body;
+  item.id = Date.now();
+  inventory.push(item);
+  res.json({ success: true });
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+// ==== client/src/App.js ====
+import React, { useState, useEffect } from 'react';
+
+function App() {
+  const [items, setItems] = useState([]);
+  const [form, setForm] = useState({ name: '', type: '', status: '' });
+
+  useEffect(() => {
+    fetch('/api/inventory')
+      .then(res => res.json())
+      .then(setItems);
+  }, []);
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await fetch('/api/inventory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form),
+    });
+    setForm({ name: '', type: '', status: '' });
+    const res = await fetch('/api/inventory');
+    const data = await res.json();
+    setItems(data);
+  };
+
+  return (
+    <div className="p-4 max-w-xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Облік майна зв'язку</h1>
+
+      <form onSubmit={handleSubmit} className="mb-6 space-y-2">
+        <input name="name" value={form.name} onChange={handleChange} placeholder="Назва" className="border p-2 w-full" required />
+        <input name="type" value={form.type} onChange={handleChange} placeholder="Тип/модель" className="border p-2 w-full" required />
+        <input name="status" value={form.status} onChange={handleChange} placeholder="Стан" className="border p-2 w-full" required />
+        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">Додати</button>
+      </form>
+
+      <table className="w-full border">
+        <thead>
+          <tr>
+            <th className="border px-2 py-1">Назва</th>
+            <th className="border px-2 py-1">Тип</th>
+            <th className="border px-2 py-1">Стан</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map(item => (
+            <tr key={item.id}>
+              <td className="border px-2 py-1">{item.name}</td>
+              <td className="border px-2 py-1">{item.type}</td>
+              <td className="border px-2 py-1">{item.status}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export default App;
+
+// ==== client/package.json ====
+{
+  "name": "client",
+  "version": "1.0.0",
+  "private": true,
+  "proxy": "http://localhost:5000",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "^5.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build"
+  }
+}
