@@ -1,0 +1,18 @@
+<h2>Список майна</h2>
+<form method="GET">
+    <input name="q" placeholder="Пошук..." value="{{ query }}">
+    <button type="submit">🔍</button>
+</form>
+<a href="/add">➕ Додати</a> | 
+<a href="/export/pdf">⬇️ PDF</a> | 
+<a href="/export/excel">⬇️ Excel</a> | 
+<a href="/logout">🚪 Вийти</a>
+<table border="1">
+<tr><th>ID</th><th>Назва</th><th>Одиниця</th><th>Кількість</th><th>Примітка</th><th>Дії</th></tr>
+{% for item in items %}
+<tr>
+<td>{{ item[0] }}</td><td>{{ item[1] }}</td><td>{{ item[2] }}</td><td>{{ item[3] }}</td><td>{{ item[4] }}</td>
+<td><a href="/edit/{{ item[0] }}">Редагувати</a> | <a href="/delete/{{ item[0] }}">Видалити</a></td>
+</tr>
+{% endfor %}
+</table>
